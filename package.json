@@ -1,0 +1,14 @@
+{
+  "name": "crm-pro-v2",
+  "version": "2.0.0",
+  "description": "CRM Pro v2 - MERN + Vite with Org-based access",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend":  "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
