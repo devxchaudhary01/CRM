@@ -1,19 +1,32 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from 'react'
+
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
+
 import {
-  RiSearchLine, RiUploadLine, RiDownloadLine, RiAddLine,
-  RiSaveLine, RiCloseLine, RiEditLine, RiRefreshLine,
-  RiAddCircleLine, RiCalendarLine, RiDeleteBinLine,
-  RiSettings3Line, RiAlertLine,
+  RiSearchLine,
+  RiUploadLine,
+  RiDownloadLine,
+  RiSaveLine,
+  RiCloseLine,
+  RiEditLine,
+  RiRefreshLine,
+  RiAddCircleLine,
 } from 'react-icons/ri'
+
 import GoogleSheetsModal from '../components/leads/GoogleSheetsModal'
 
-/* ✅ YOUR DEPLOYED BACKEND */
+/* ✅ DEPLOYED BACKEND API */
 const API = 'https://crm-backend-4yp0.onrender.com'
 
-/* ─── AXIOS CONFIG ───────────────────────────────────── */
+/* ─── AXIOS CONFIG ───────────────────────── */
+
 axios.defaults.baseURL = API
 
 axios.interceptors.request.use(config => {
@@ -28,38 +41,48 @@ axios.interceptors.request.use(config => {
   return config
 })
 
-/* ─── Constants ──────────────────────────────────────────── */
+/* ─── STATUS ─────────────────────────────── */
+
 const STATUS_BADGE = {
   pending: 'b-gray',
   in_progress: 'b-blue',
   converted: 'b-green',
-  not_converted: 'b-red'
+  not_converted: 'b-red',
 }
 
 const STATUS_LABEL = {
   pending: 'Pending',
   in_progress: 'In Progress',
   converted: 'Converted',
-  not_converted: 'Not Converted'
+  not_converted: 'Not Converted',
 }
 
 const OUTCOMES = [
   { k: 'I', lbl: 'Interested' },
   { k: 'NI', lbl: 'Not Interested' },
   { k: 'CB', lbl: 'Call Back' },
-  { k: 'NA', lbl: 'No Answer' }
+  { k: 'NA', lbl: 'No Answer' },
 ]
 
-/* ─── Outcome button strip ───────────────────────────────── */
-function OutcomeBtn({ value, onChange, disabled }) {
+/* ─── OUTCOME BUTTONS ───────────────────── */
+
+function OutcomeBtn({
+  value,
+  onChange,
+  disabled,
+}) {
   return (
     <div className="outcome-row">
       {OUTCOMES.map(o => (
         <button
           key={o.k}
           type="button"
-          className={`outcome-btn${value === o.k ? ' sel-' + o.k : ''}`}
-          onClick={() => !disabled && onChange(o.k)}
+          className={`outcome-btn${
+            value === o.k ? ' sel-' + o.k : ''
+          }`}
+          onClick={() =>
+            !disabled && onChange(o.k)
+          }
           disabled={disabled}
         >
           {o.lbl}
@@ -69,7 +92,8 @@ function OutcomeBtn({ value, onChange, disabled }) {
   )
 }
 
-/* ─── Single call panel ───────────────────── */
+/* ─── CALL PANEL ────────────────────────── */
+
 function CallPanel({
   label,
   call,
@@ -78,11 +102,14 @@ function CallPanel({
   isOptional,
   enabled,
   showEnable,
-  onEnable
+  onEnable,
 }) {
   if (isOptional && !enabled) {
     return showEnable ? (
-      <button className="btn btn-ghost btn-xs" onClick={onEnable}>
+      <button
+        className="btn btn-ghost btn-xs"
+        onClick={onEnable}
+      >
         <RiAddCircleLine /> Add {label}
       </button>
     ) : (
@@ -99,7 +126,7 @@ function CallPanel({
           color: 'var(--muted)',
           marginBottom: 4,
           textTransform: 'uppercase',
-          letterSpacing: 0.8
+          letterSpacing: 0.8,
         }}
       >
         {label}
@@ -109,16 +136,34 @@ function CallPanel({
         <>
           <OutcomeBtn
             value={call?.outcome || ''}
-            onChange={v => onChange({ ...call, outcome: v })}
+            onChange={v =>
+              onChange({
+                ...call,
+                outcome: v,
+              })
+            }
           />
 
           <input
             type="date"
             className="ie"
-            style={{ marginTop: 5, width: '100%' }}
-            value={call?.date ? String(call.date).substring(0, 10) : ''}
+            style={{
+              marginTop: 5,
+              width: '100%',
+            }}
+            value={
+              call?.date
+                ? String(call.date).substring(
+                    0,
+                    10
+                  )
+                : ''
+            }
             onChange={e =>
-              onChange({ ...call, date: e.target.value })
+              onChange({
+                ...call,
+                date: e.target.value,
+              })
             }
           />
 
@@ -128,7 +173,10 @@ function CallPanel({
             placeholder="Notes…"
             value={call?.notes || ''}
             onChange={e =>
-              onChange({ ...call, notes: e.target.value })
+              onChange({
+                ...call,
+                notes: e.target.value,
+              })
             }
           />
         </>
@@ -146,15 +194,23 @@ function CallPanel({
                   : 'b-gray'
               }`}
             >
-              {OUTCOMES.find(o => o.k === call.outcome)?.lbl}
+              {
+                OUTCOMES.find(
+                  o => o.k === call.outcome
+                )?.lbl
+              }
             </span>
           ) : (
-            <span className="muted fs11">—</span>
+            <span className="muted fs11">
+              —
+            </span>
           )}
 
           {call?.date && (
             <div className="fs11 muted">
-              {new Date(call.date).toLocaleDateString()}
+              {new Date(
+                call.date
+              ).toLocaleDateString()}
             </div>
           )}
 
@@ -169,32 +225,49 @@ function CallPanel({
   )
 }
 
-/* ─── Main LeadsPage ─────────────────────────────────────── */
+/* ─── MAIN PAGE ─────────────────────────── */
+
 export default function LeadsPage() {
   const {
     canUpload,
     canDownload,
-    canSetFollowUp,
-    canManage,
-    user
+    user,
   } = useAuth()
 
   const [leads, setLeads] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
-  const [search, setSearch] = useState('')
-  const [statusF, setStatusF] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [editId, setEditId] = useState(null)
-  const [editData, setEditData] = useState({})
-  const [saving, setSaving] = useState(false)
-  const [customCols, setCustomCols] = useState([])
 
-  const [showUpload, setShowUpload] = useState(false)
-  const [showSheets, setShowSheets] = useState(false)
+  const [search, setSearch] =
+    useState('')
 
-  const [uploading, setUploading] = useState(false)
+  const [statusF, setStatusF] =
+    useState('')
+
+  const [loading, setLoading] =
+    useState(true)
+
+  const [editId, setEditId] =
+    useState(null)
+
+  const [editData, setEditData] =
+    useState({})
+
+  const [saving, setSaving] =
+    useState(false)
+
+  const [customCols, setCustomCols] =
+    useState([])
+
+  const [showUpload, setShowUpload] =
+    useState(false)
+
+  const [showSheets, setShowSheets] =
+    useState(false)
+
+  const [uploading, setUploading] =
+    useState(false)
 
   const fileRef = useRef()
 
@@ -205,7 +278,7 @@ export default function LeadsPage() {
     'ops_lead',
     'ops_manager',
     'org_owner',
-    'super_admin'
+    'super_admin',
   ].includes(role)
 
   const canEditC2 = [
@@ -213,7 +286,7 @@ export default function LeadsPage() {
     'ops_lead',
     'ops_manager',
     'org_owner',
-    'super_admin'
+    'super_admin',
   ].includes(role)
 
   const canEditC3 = [
@@ -221,47 +294,61 @@ export default function LeadsPage() {
     'ops_lead',
     'ops_manager',
     'org_owner',
-    'super_admin'
+    'super_admin',
   ].includes(role)
 
-  const canWork = canEditC1 || canEditC2 || canEditC3
+  const canWork =
+    canEditC1 || canEditC2 || canEditC3
 
-  /* LOAD CUSTOM COLUMNS */
-  const loadCustomCols = useCallback(async () => {
-    try {
-      const { data } = await axios.get('/api/leads/org-columns')
+  /* ─── LOAD CUSTOM COLUMNS ───────────── */
 
-      setCustomCols(data.customColumns || [])
-    } catch (e) {
-      console.log(e)
-    }
-  }, [])
+  const loadCustomCols =
+    useCallback(async () => {
+      try {
+        const { data } =
+          await axios.get(
+            '/api/leads/org-columns'
+          )
 
-  /* FETCH LEADS */
-  const fetchLeads = useCallback(async () => {
-    setLoading(true)
+        setCustomCols(
+          data.customColumns || []
+        )
+      } catch (e) {
+        console.log(e)
+      }
+    }, [])
 
-    try {
-      const { data } = await axios.get('/api/leads', {
-        params: {
-          page,
-          limit: 15,
-          search,
-          status: statusF
-        }
-      })
+  /* ─── FETCH LEADS ───────────────────── */
 
-      setLeads(data.leads || [])
-      setTotal(data.total || 0)
-      setPages(data.pages || 1)
-    } catch (e) {
-      toast.error(
-        e.response?.data?.message || 'Failed to load leads'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [page, statusF, search])
+  const fetchLeads = useCallback(
+    async () => {
+      setLoading(true)
+
+      try {
+        const { data } =
+          await axios.get('/api/leads', {
+            params: {
+              page,
+              limit: 15,
+              search,
+              status: statusF,
+            },
+          })
+
+        setLeads(data.leads || [])
+        setTotal(data.total || 0)
+        setPages(data.pages || 1)
+      } catch (e) {
+        toast.error(
+          e.response?.data?.message ||
+            'Failed to load leads'
+        )
+      } finally {
+        setLoading(false)
+      }
+    },
+    [page, statusF, search]
+  )
 
   useEffect(() => {
     fetchLeads()
@@ -269,75 +356,109 @@ export default function LeadsPage() {
   }, [page, statusF])
 
   useEffect(() => {
-    const t = setTimeout(fetchLeads, 400)
+    const t = setTimeout(
+      fetchLeads,
+      400
+    )
 
     return () => clearTimeout(t)
   }, [search])
 
-  /* EDIT */
+  /* ─── EDIT ──────────────────────────── */
+
   const startEdit = l => {
     setEditId(l._id)
 
     setEditData({
       c1: {
-        outcome: l.c1?.outcome || '',
+        outcome:
+          l.c1?.outcome || '',
         date: l.c1?.date
-          ? String(l.c1.date).substring(0, 10)
+          ? String(l.c1.date).substring(
+              0,
+              10
+            )
           : '',
-        notes: l.c1?.notes || ''
+        notes: l.c1?.notes || '',
       },
 
       c2: {
-        outcome: l.c2?.outcome || '',
+        outcome:
+          l.c2?.outcome || '',
         date: l.c2?.date
-          ? String(l.c2.date).substring(0, 10)
+          ? String(l.c2.date).substring(
+              0,
+              10
+            )
           : '',
-        notes: l.c2?.notes || ''
+        notes: l.c2?.notes || '',
       },
 
       c3: {
-        outcome: l.c3?.outcome || '',
+        outcome:
+          l.c3?.outcome || '',
         date: l.c3?.date
-          ? String(l.c3.date).substring(0, 10)
+          ? String(l.c3.date).substring(
+              0,
+              10
+            )
           : '',
-        notes: l.c3?.notes || ''
+        notes: l.c3?.notes || '',
       },
 
       product: l.product || '',
       service: l.service || '',
-      customData: { ...(l.customData || {}) }
+
+      customData: {
+        ...(l.customData || {}),
+      },
     })
   }
 
-  /* SAVE */
+  /* ─── SAVE ──────────────────────────── */
+
   const save = async () => {
     setSaving(true)
 
     try {
-      await axios.put(`/api/leads/${editId}`, editData)
+      await axios.put(
+        `/api/leads/${editId}`,
+        editData
+      )
 
-      toast.success('Saved Successfully')
+      toast.success(
+        'Saved Successfully'
+      )
 
       setEditId(null)
 
       fetchLeads()
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Save failed')
+      toast.error(
+        e.response?.data?.message ||
+          'Save failed'
+      )
     } finally {
       setSaving(false)
     }
   }
 
-  /* DOWNLOAD */
+  /* ─── DOWNLOAD ─────────────────────── */
+
   const doDownload = async () => {
     try {
-      const res = await axios.get('/api/leads/download', {
-        responseType: 'blob'
-      })
+      const res = await axios.get(
+        '/api/leads/download',
+        {
+          responseType: 'blob',
+        }
+      )
 
-      const url = URL.createObjectURL(res.data)
+      const url =
+        URL.createObjectURL(res.data)
 
-      const a = document.createElement('a')
+      const a =
+        document.createElement('a')
 
       a.href = url
       a.download = 'leads.xlsx'
@@ -347,12 +468,14 @@ export default function LeadsPage() {
       toast.success('Downloaded!')
     } catch (e) {
       toast.error(
-        e.response?.data?.message || 'Download failed'
+        e.response?.data?.message ||
+          'Download failed'
       )
     }
   }
 
-  /* UPLOAD */
+  /* ─── UPLOAD ───────────────────────── */
+
   const doUpload = async file => {
     if (!file) return
 
@@ -363,24 +486,29 @@ export default function LeadsPage() {
     setUploading(true)
 
     try {
-      const { data } = await axios.post(
-        '/api/leads/upload',
-        fd,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
+      const { data } =
+        await axios.post(
+          '/api/leads/upload',
+          fd,
+          {
+            headers: {
+              'Content-Type':
+                'multipart/form-data',
+            },
           }
-        }
-      )
+        )
 
-      toast.success(`${data.count} leads imported!`)
+      toast.success(
+        `${data.count} leads imported!`
+      )
 
       setShowUpload(false)
 
       fetchLeads()
     } catch (e) {
       toast.error(
-        e.response?.data?.message || 'Upload failed'
+        e.response?.data?.message ||
+          'Upload failed'
       )
     } finally {
       setUploading(false)
@@ -390,6 +518,7 @@ export default function LeadsPage() {
   return (
     <>
       {/* TOOLBAR */}
+
       <div className="toolbar">
         <div className="search-wrap">
           <RiSearchLine />
@@ -397,18 +526,26 @@ export default function LeadsPage() {
           <input
             placeholder="Search name, email, contact…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e =>
+              setSearch(e.target.value)
+            }
           />
         </div>
 
         <select
           className="btn btn-ghost btn-sm"
           value={statusF}
-          onChange={e => setStatusF(e.target.value)}
+          onChange={e =>
+            setStatusF(e.target.value)
+          }
         >
-          <option value="">All Status</option>
+          <option value="">
+            All Status
+          </option>
 
-          {Object.entries(STATUS_LABEL).map(([k, v]) => (
+          {Object.entries(
+            STATUS_LABEL
+          ).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
             </option>
@@ -430,16 +567,20 @@ export default function LeadsPage() {
                 background:
                   'linear-gradient(135deg,#4285F4,#34A853)',
                 color: '#fff',
-                border: 'none'
+                border: 'none',
               }}
-              onClick={() => setShowSheets(true)}
+              onClick={() =>
+                setShowSheets(true)
+              }
             >
               📊 Google Sheets
             </button>
 
             <button
               className="btn btn-outline btn-sm"
-              onClick={() => setShowUpload(true)}
+              onClick={() =>
+                setShowUpload(true)
+              }
             >
               <RiUploadLine /> Upload Excel
             </button>
@@ -457,7 +598,11 @@ export default function LeadsPage() {
       </div>
 
       {/* TABLE */}
-      <div className="tbl-wrap" style={{ flex: 1 }}>
+
+      <div
+        className="tbl-wrap"
+        style={{ flex: 1 }}
+      >
         <table>
           <thead>
             <tr>
@@ -469,7 +614,9 @@ export default function LeadsPage() {
               <th>Service</th>
 
               {customCols.map(col => (
-                <th key={col.key}>{col.label}</th>
+                <th key={col.key}>
+                  {col.label}
+                </th>
               ))}
 
               <th>C1</th>
@@ -484,10 +631,13 @@ export default function LeadsPage() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={12 + customCols.length}
+                  colSpan={
+                    12 +
+                    customCols.length
+                  }
                   style={{
                     textAlign: 'center',
-                    padding: 30
+                    padding: 30,
                   }}
                 >
                   Loading...
@@ -496,10 +646,13 @@ export default function LeadsPage() {
             ) : !leads.length ? (
               <tr>
                 <td
-                  colSpan={12 + customCols.length}
+                  colSpan={
+                    12 +
+                    customCols.length
+                  }
                   style={{
                     textAlign: 'center',
-                    padding: 30
+                    padding: 30,
                   }}
                 >
                   No Leads Found
@@ -507,28 +660,43 @@ export default function LeadsPage() {
               </tr>
             ) : (
               leads.map((l, i) => {
-                const isEditing = editId === l._id
+                const isEditing =
+                  editId === l._id
 
                 return (
                   <tr key={l._id}>
-                    <td>{(page - 1) * 15 + i + 1}</td>
+                    <td>
+                      {(page - 1) * 15 +
+                        i +
+                        1}
+                    </td>
 
                     <td>{l.name}</td>
 
-                    <td>{l.emailId || '—'}</td>
+                    <td>
+                      {l.emailId || '—'}
+                    </td>
 
-                    <td>{l.contactNo || '—'}</td>
+                    <td>
+                      {l.contactNo || '—'}
+                    </td>
 
                     <td>
                       {isEditing ? (
                         <input
                           className="ie"
-                          value={editData.product}
+                          value={
+                            editData.product
+                          }
                           onChange={e =>
-                            setEditData(d => ({
-                              ...d,
-                              product: e.target.value
-                            }))
+                            setEditData(
+                              d => ({
+                                ...d,
+                                product:
+                                  e.target
+                                    .value,
+                              })
+                            )
                           }
                         />
                       ) : (
@@ -540,12 +708,18 @@ export default function LeadsPage() {
                       {isEditing ? (
                         <input
                           className="ie"
-                          value={editData.service}
+                          value={
+                            editData.service
+                          }
                           onChange={e =>
-                            setEditData(d => ({
-                              ...d,
-                              service: e.target.value
-                            }))
+                            setEditData(
+                              d => ({
+                                ...d,
+                                service:
+                                  e.target
+                                    .value,
+                              })
+                            )
                           }
                         />
                       ) : (
@@ -559,38 +733,50 @@ export default function LeadsPage() {
                           <input
                             className="ie"
                             value={
-                              editData.customData?.[
+                              editData
+                                .customData?.[
                                 col.key
                               ] || ''
                             }
                             onChange={e =>
-                              setEditData(d => ({
-                                ...d,
-                                customData: {
-                                  ...d.customData,
-                                  [col.key]:
-                                    e.target.value
-                                }
-                              }))
+                              setEditData(
+                                d => ({
+                                  ...d,
+                                  customData:
+                                    {
+                                      ...d.customData,
+                                      [col.key]:
+                                        e
+                                          .target
+                                          .value,
+                                    },
+                                })
+                              )
                             }
                           />
                         ) : (
-                          l.customData?.[col.key] ||
-                          '—'
+                          l.customData?.[
+                            col.key
+                          ] || '—'
                         )}
                       </td>
                     ))}
 
                     <td>
-                      {isEditing && canEditC1 ? (
+                      {isEditing &&
+                      canEditC1 ? (
                         <CallPanel
                           label="C1"
-                          call={editData.c1}
+                          call={
+                            editData.c1
+                          }
                           onChange={v =>
-                            setEditData(d => ({
-                              ...d,
-                              c1: v
-                            }))
+                            setEditData(
+                              d => ({
+                                ...d,
+                                c1: v,
+                              })
+                            )
                           }
                           canEdit
                         />
@@ -598,21 +784,28 @@ export default function LeadsPage() {
                         <CallPanel
                           label="C1"
                           call={l.c1}
-                          canEdit={false}
+                          canEdit={
+                            false
+                          }
                         />
                       )}
                     </td>
 
                     <td>
-                      {isEditing && canEditC2 ? (
+                      {isEditing &&
+                      canEditC2 ? (
                         <CallPanel
                           label="C2"
-                          call={editData.c2}
+                          call={
+                            editData.c2
+                          }
                           onChange={v =>
-                            setEditData(d => ({
-                              ...d,
-                              c2: v
-                            }))
+                            setEditData(
+                              d => ({
+                                ...d,
+                                c2: v,
+                              })
+                            )
                           }
                           canEdit
                         />
@@ -620,21 +813,28 @@ export default function LeadsPage() {
                         <CallPanel
                           label="C2"
                           call={l.c2}
-                          canEdit={false}
+                          canEdit={
+                            false
+                          }
                         />
                       )}
                     </td>
 
                     <td>
-                      {isEditing && canEditC3 ? (
+                      {isEditing &&
+                      canEditC3 ? (
                         <CallPanel
                           label="C3"
-                          call={editData.c3}
+                          call={
+                            editData.c3
+                          }
                           onChange={v =>
-                            setEditData(d => ({
-                              ...d,
-                              c3: v
-                            }))
+                            setEditData(
+                              d => ({
+                                ...d,
+                                c3: v,
+                              })
+                            )
                           }
                           canEdit
                         />
@@ -642,7 +842,9 @@ export default function LeadsPage() {
                         <CallPanel
                           label="C3"
                           call={l.c3}
-                          canEdit={false}
+                          canEdit={
+                            false
+                          }
                         />
                       )}
                     </td>
@@ -650,12 +852,14 @@ export default function LeadsPage() {
                     <td>
                       <span
                         className={`badge ${
-                          STATUS_BADGE[l.status] ||
-                          'b-gray'
+                          STATUS_BADGE[
+                            l.status
+                          ] || 'b-gray'
                         }`}
                       >
-                        {STATUS_LABEL[l.status] ||
-                          l.status}
+                        {STATUS_LABEL[
+                          l.status
+                        ] || l.status}
                       </span>
                     </td>
 
@@ -663,14 +867,19 @@ export default function LeadsPage() {
                       {isEditing ? (
                         <div
                           style={{
-                            display: 'flex',
-                            gap: 5
+                            display:
+                              'flex',
+                            gap: 5,
                           }}
                         >
                           <button
                             className="btn btn-success btn-xs"
-                            onClick={save}
-                            disabled={saving}
+                            onClick={
+                              save
+                            }
+                            disabled={
+                              saving
+                            }
                           >
                             {saving ? (
                               '...'
@@ -682,7 +891,9 @@ export default function LeadsPage() {
                           <button
                             className="btn-icon"
                             onClick={() =>
-                              setEditId(null)
+                              setEditId(
+                                null
+                              )
                             }
                           >
                             <RiCloseLine />
@@ -693,7 +904,9 @@ export default function LeadsPage() {
                           <button
                             className="btn-icon"
                             onClick={() =>
-                              startEdit(l)
+                              startEdit(
+                                l
+                              )
                             }
                           >
                             <RiEditLine />
@@ -710,25 +923,37 @@ export default function LeadsPage() {
       </div>
 
       {/* PAGINATION */}
+
       {pages > 1 && (
         <div className="pagination">
           <button
             className="pg"
-            onClick={() => setPage(p => p - 1)}
+            onClick={() =>
+              setPage(p => p - 1)
+            }
             disabled={page === 1}
           >
             ‹
           </button>
 
           {Array.from(
-            { length: Math.min(pages, 7) },
+            {
+              length: Math.min(
+                pages,
+                7
+              ),
+            },
             (_, i) => (
               <button
                 key={i + 1}
                 className={`pg${
-                  page === i + 1 ? ' on' : ''
+                  page === i + 1
+                    ? ' on'
+                    : ''
                 }`}
-                onClick={() => setPage(i + 1)}
+                onClick={() =>
+                  setPage(i + 1)
+                }
               >
                 {i + 1}
               </button>
@@ -737,7 +962,9 @@ export default function LeadsPage() {
 
           <button
             className="pg"
-            onClick={() => setPage(p => p + 1)}
+            onClick={() =>
+              setPage(p => p + 1)
+            }
             disabled={page === pages}
           >
             ›
@@ -746,22 +973,30 @@ export default function LeadsPage() {
       )}
 
       {/* GOOGLE SHEETS */}
+
       {showSheets && (
         <GoogleSheetsModal
-          onClose={() => setShowSheets(false)}
+          onClose={() =>
+            setShowSheets(false)
+          }
           onImported={fetchLeads}
         />
       )}
 
       {/* UPLOAD MODAL */}
+
       {showUpload && (
         <div
           className="overlay"
-          onClick={() => setShowUpload(false)}
+          onClick={() =>
+            setShowUpload(false)
+          }
         >
           <div
             className="modal"
-            onClick={e => e.stopPropagation()}
+            onClick={e =>
+              e.stopPropagation()
+            }
           >
             <div className="modal-head">
               <div>
@@ -770,7 +1005,8 @@ export default function LeadsPage() {
                 </div>
 
                 <div className="modal-sub">
-                  Supports XLSX, XLS, CSV
+                  Supports XLSX, XLS,
+                  CSV
                 </div>
               </div>
 
@@ -796,7 +1032,8 @@ export default function LeadsPage() {
                 e.preventDefault()
 
                 doUpload(
-                  e.dataTransfer.files[0]
+                  e.dataTransfer
+                    .files[0]
                 )
               }}
             >
@@ -805,11 +1042,13 @@ export default function LeadsPage() {
               </div>
 
               <h4>
-                Click or drag & drop here
+                Click or drag & drop
+                here
               </h4>
 
               <p>
-                Supports .xlsx .xls .csv
+                Supports .xlsx .xls
+                .csv
               </p>
 
               <input
@@ -819,7 +1058,8 @@ export default function LeadsPage() {
                 hidden
                 onChange={e =>
                   doUpload(
-                    e.target.files[0]
+                    e.target
+                      .files[0]
                   )
                 }
               />
@@ -828,8 +1068,9 @@ export default function LeadsPage() {
             {uploading && (
               <p
                 style={{
-                  textAlign: 'center',
-                  marginTop: 12
+                  textAlign:
+                    'center',
+                  marginTop: 12,
                 }}
               >
                 Uploading...
